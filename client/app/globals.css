@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+  }
+  .dark {
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+  }
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+:root {
+  --color-primary: #008000;
+  --color-secondary: #ffd700;
+  --color-accent: #e31b23;
+}
+
+.bg-brand-green {
+  background-color: var(--color-primary) !important;
+}
+.text-brand-green {
+  color: var(--color-primary) !important;
+}
+.border-brand-green {
+  border-color: var(--color-primary) !important;
+}
+
+.bg-brand-gold {
+  background-color: var(--color-secondary) !important;
+}
+.text-brand-gold {
+  color: var(--color-secondary) !important;
+}
+
+.bg-brand-red {
+  background-color: var(--color-accent) !important;
+}
+.text-brand-red {
+  color: var(--color-accent) !important;
+}
+
+/* Responsive helpers */
+@media (max-width: 768px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-cols-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .grid-cols-5 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .max-w-lg {
+    max-width: 90% !important;
+  }
+  .max-w-2xl {
+    max-width: 90% !important;
+  }
+  .max-w-4xl {
+    max-width: 90% !important;
+  }
+  .w-64 {
+    width: 100% !important;
+  }
+}
+
+/* Correction visibilité toolbar React-Quill en mode sombre */
+.ql-toolbar button,
+.ql-toolbar .ql-stroke {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+.ql-toolbar button:hover,
+.ql-toolbar .ql-active {
+  color: #06b6d4 !important;
+  stroke: #06b6d4 !important;
+}
+.quill {
+  color: inherit;
+}
+/* Leaflet styles */
+@import "leaflet/dist/leaflet.css";
+@import "leaflet/dist/leaflet.css";

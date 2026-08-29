@@ -1,0 +1,674 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String         @id @default(cuid())
+  email                  String         @unique
+  passwordHash           String
+  firstName              String
+  lastName               String
+  phone                  String?
+  country                String?
+  region                 String?
+  departement            String?
+  commune                String?
+  adresse                String?
+  cni                    String?
+  carteElecteur          String?
+  role                   String         @default("VISITOR")
+  verified               Boolean        @default(false)
+  verificationToken      String? @unique
+  verificationExpires    DateTime?
+  profileImage           String?
+  bio                    String?
+  xp                     Int            @default(0)
+  level                  Int            @default(1)
+  skills                 String         @default("[]")
+  totpSecret             String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  authoredContentBlocks  ContentBlock[] @relation("AuthoredContentBlocks")
+  validatedContentBlocks ContentBlock[] @relation("ValidatedContentBlocks")
+
+  // relations... (gardez toutes les lignes de relations existantes)
+  posts                 Post[]
+  comments              Comment[]
+  likes                 Like[]
+  proposals             CitizenProposal[]
+  votes                 Vote[]
+  diasporaVotes         DiasporaVote[]
+  diasporaIntents       DiasporaIntent[]
+  diasporaCandidates    DiasporaCandidate[]
+  transactions          Transaction[]
+  sentMessages          Message[]              @relation("SentMessages")
+  receivedMessages      Message[]              @relation("ReceivedMessages")
+  conversations         Conversation[]         @relation("UserConversations")
+  applications          JobApplication[]
+  eventParticipations   EventParticipant[]
+  badges                UserBadge[]
+  reports               Report[]
+  organizationPositions OrganizationPosition[]
+  candidatures          Candidature[]
+  roles                 Role[]
+  customFieldValues     CustomFieldValue[]
+  charterSignatures     CharterSignature[]
+  sponsorships          Sponsorship[]
+  settings              UserSettings?
+  simulatorScenarios    SimulatorScenario[]
+  pushSubscriptions     PushSubscription[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ... (le reste du schéma inchangé, nous le recopions)
+
+model Post {
+  id         String    @id @default(cuid())
+  content    String
+  visibility String    @default("PUBLIC")
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  likes      Like[]
+  images     String    @default("[]")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model ProgramSection {
+  id        String           @id @default(cuid())
+  title     String
+  objective String
+  order     Int
+  measures  ProgramMeasure[]
+  createdAt DateTime         @default(now())
+}
+
+model ProgramMeasure {
+  id             String         @id @default(cuid())
+  description    String
+  sectionId      String
+  section        ProgramSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  budgetEstimate Float?
+  timeline       String?
+}
+
+model CitizenProposal {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  theme       String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes       Vote[]
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+}
+
+model Vote {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proposalId String
+  proposal   CitizenProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+
+  @@unique([userId, proposalId])
+}
+
+model DiasporaIntent {
+  id         String   @id @default(cuid())
+  country    String
+  profession String
+  intention  String
+  date       String
+  capital    Float?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+}
+
+model DiasporaCandidate {
+  id         String         @id @default(cuid())
+  userId     String
+  firstName  String
+  lastName   String
+  email      String
+  phone      String?
+  country    String
+  city       String?
+  profession String?
+  sector     String?
+  motivation String?
+  status     String         @default("PENDING") // PENDING, APPROVED, REJECTED, INVALIDATED
+  documents  String? // URLs des documents uploadés
+  theme      String
+  bio        String?
+  votes      DiasporaVote[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DiasporaVote {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   DiasporaCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+
+  @@unique([userId, candidateId])
+}
+
+model Portfolio {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  assignedTo  String?
+  signed      Boolean   @default(false)
+  signedAt    DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Transaction {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountEur  Float
+  amountFcfp Float
+  mode       String
+  type       String
+  status     String
+  ref        String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  isGroup      Boolean   @default(false)
+  groupName    String?
+  messages     Message[]
+  participants User[]    @relation("UserConversations")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId     String?
+  receiver       User?        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  read           Boolean      @default(false)
+  readAt         DateTime?
+  attachments    String       @default("[]")
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Event {
+  id              String             @id @default(cuid())
+  title           String
+  description     String
+  type            String
+  date            DateTime
+  location        String?
+  locationUrl     String?
+  creatorId       String
+  maxParticipants Int?
+  participants    EventParticipant[]
+  createdAt       DateTime           @default(now())
+}
+
+model EventParticipant {
+  id        String    @id @default(cuid())
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String    @default("REGISTERED")
+  checkedIn DateTime?
+
+  @@unique([eventId, userId])
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String
+  icon        String
+  requiredXp  Int
+  category    String?
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+model UserSettings {
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications     Boolean @default(true)
+  darkMode          Boolean @default(false)
+  language          String  @default("fr")
+  defaultVisibility String  @default("PUBLIC")
+}
+
+model Job {
+  id           String           @id @default(cuid())
+  title        String
+  description  String
+  department   String
+  skills       String           @default("[]")
+  status       String           @default("OPEN")
+  location     String?
+  remote       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverLetter String?
+  status      String   @default("NEW")
+  matchScore  Float    @default(0)
+  resumeUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([jobId, userId])
+}
+
+model SimulatorScenario {
+  id              String   @id @default(cuid())
+  name            String
+  actions         String
+  optimizedBudget Float
+  createdAt       DateTime @default(now())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PressRelease {
+  id          String    @id @default(cuid())
+  title       String
+  summary     String
+  content     String
+  publishedAt DateTime?
+  isPublished Boolean   @default(false)
+  authorId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  browser   String?
+  createdAt DateTime @default(now())
+}
+
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  confirmed Boolean  @default(false)
+  token     String?
+  createdAt DateTime @default(now())
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  type      String // "image" ou "video"
+  authorId  String?
+  createdAt DateTime @default(now())
+}
+
+model IdeologyPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String
+  updatedAt DateTime @updatedAt
+}
+
+model Sponsorship {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cniNumber        String
+  region           String
+  verified         Boolean  @default(false)
+  smsCode          String? // Code SMS simulé
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  voterCardNumber  String? // numéro carte électeur
+  signatureData    String? // signature numérique (base64)
+  honorDeclaration Boolean  @default(false) // déclaration sur l'honneur
+  charterSigned    Boolean  @default(false) // signature de la charte
+  firstName        String? // prénom du parrain (si différent de l'utilisateur)
+  lastName         String? // nom
+  email            String? // email
+  phone            String? // téléphone
+  address          String? // adresse
+  engagementLetter String? // texte de la lettre d'engagement
+
+  @@unique([userId, cniNumber])
+}
+
+model ContentBlock {
+  id            String    @id @default(cuid())
+  page          String // ex: "home", "neutralite-active", "parite", etc.
+  title         String?
+  content       String
+  imageUrl      String?
+  linkUrl       String?
+  order         Int       @default(0)
+  status        String    @default("draft")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  validatedAt   DateTime?
+  authorId      String?
+  author        User?     @relation("AuthoredContentBlocks", fields: [authorId], references: [id], onDelete: SetNull)
+  validatedById String?
+  validatedBy   User?     @relation("ValidatedContentBlocks", fields: [validatedById], references: [id], onDelete: SetNull)
+}
+
+model Ministry {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  budget      Float      @default(0)
+  description String?
+  directors   Director[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Director {
+  id         String   @id @default(cuid())
+  name       String
+  title      String
+  ministryId String
+  ministry   Ministry @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+  email      String?
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  description String
+  category    String // "corruption", "abus", "autre"
+  anonymous   Boolean  @default(true)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status      String   @default("pending") // pending, reviewed, resolved
+  createdAt   DateTime @default(now())
+}
+
+model CharterSignature {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cniNumber String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId])
+}
+
+model MenuItem {
+  id        String     @id @default(cuid())
+  label     String
+  href      String? // devient optionnel
+  icon      String?
+  parentId  String?
+  parent    MenuItem?  @relation("MenuChildren", fields: [parentId], references: [id])
+  children  MenuItem[] @relation("MenuChildren")
+  order     Int        @default(0)
+  roles     String     @default("MEMBER,COORDINATOR,ADMIN") // stockés en CSV
+  enabled   Boolean    @default(true)
+  config    String? // JSON string for specific settings
+  isVisible Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model OrganizationUnit {
+  id        String                 @id @default(cuid())
+  name      String
+  type      String // "national", "regional", "departemental", "communal"
+  parentId  String?
+  parent    OrganizationUnit?      @relation("OrgHierarchy", fields: [parentId], references: [id])
+  children  OrganizationUnit[]     @relation("OrgHierarchy")
+  positions OrganizationPosition[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+model OrganizationPosition {
+  id        String           @id @default(cuid())
+  title     String
+  unitId    String
+  unit      OrganizationUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  memberId  String?
+  member    User?            @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model PaymentMethod {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  icon           String?
+  enabled        Boolean  @default(true)
+  fields         String?
+  instructions   String?
+  recipientPhone String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SocialLink {
+  id       String  @id @default(cuid())
+  platform String
+  url      String
+  icon     String  @default("🌐")
+  enabled  Boolean @default(true)
+  config   String? // JSON string for specific settings
+}
+
+model CustomField {
+  id                    String             @id @default(cuid())
+  name                  String             @unique
+  label                 String
+  fieldType             String // "text", "number", "date", "select", "checkbox", "textarea"
+  options               String? // pour type "select", options séparées par des virgules
+  required              Boolean            @default(false)
+  visibleAtRegistration Boolean            @default(false)
+  order                 Int                @default(0)
+  enabled               Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  values                CustomFieldValue[]
+}
+
+model CustomFieldValue {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fieldId   String
+  field     CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  value     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([userId, fieldId])
+}
+
+model DashboardConfig {
+  id        String   @id @default(cuid())
+  widget    String   @unique
+  enabled   Boolean  @default(true)
+  order     Int      @default(0)
+  roles     String   @default("ADMIN,COORDINATOR,MEMBER,VISITOR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  permissions RolePermission[]
+  users       User[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model SiteVisibility {
+  id        String   @id @default(cuid())
+  page      String   @unique
+  roles     String   @default("ADMIN,COORDINATOR,MEMBER,VISITOR")
+  updatedAt DateTime @updatedAt
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Candidature {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poste      String // "coordinateur", "elu", "conseiller", "responsable_regional", "responsable_departemental", "responsable_communal", "responsable_national"
+  zone       String? // ex: "Dakar", "Thiès", "Dakar Centre", etc.
+  motivation String
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SiteSettings {
+  customCSS       String?
+  customJS        String?
+  backgroundImage String?
+  id              String  @id @default(cuid())
+  primaryColor    String?
+  secondaryColor  String?
+  accentColor     String?
+  siteTitle       String?
+  faviconUrl      String?
+  logoHeaderLeft  String?
+  logoHeaderRight String?
+  logoFooterLeft  String?
+  logoFooterRight String?
+  logoPosition    String  @default("header_left")
+  copyProtection  Boolean @default(false)
+}
+
+model DynamicPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String   @default("") // contenu HTML (WYSIWYG)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Translation {
+  id        String   @id @default(cuid())
+  key       String
+  locale    String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}

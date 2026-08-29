@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+*.log
+.env
+.env*.local
+*.bak
+*.bak2
+*.bak3
+*.save
+*.tar.gz
+cookies.txt
+inject-global.sh
+server/dist/

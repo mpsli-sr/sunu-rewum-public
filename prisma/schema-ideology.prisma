@@ -1,0 +1,7 @@
+model IdeologyPage {
+  id       String @id @default(cuid())
+  slug     String @unique  // ex: "neutralite-active"
+  title    String
+  content  String           // HTML
+  updatedAt DateTime @updatedAt
+}
