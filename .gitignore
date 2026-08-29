@@ -12,3 +12,5 @@ dist/
 cookies.txt
 inject-global.sh
 server/dist/
+*.tar.gz
+*.zip
