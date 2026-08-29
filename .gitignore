@@ -8,3 +8,6 @@ node_modules/
 *.save
 *.sh
 *.tar.gz
+cookies.txt
+*.bak
+server/dist/
