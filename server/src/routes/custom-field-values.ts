@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -10,7 +11,7 @@ router.get('/me', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const values = await prisma.customFieldValue.findMany({
       where: { userId: decoded.userId },
       include: { field: true },
@@ -24,7 +25,7 @@ router.put('/:fieldId', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { value } = req.body;
     const fieldId = req.params.fieldId;
     // Vérifier que le champ existe et est actif

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { requireRole } from '../middleware/auth';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -11,7 +12,7 @@ router.get('/me', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const candidatures = await prisma.candidature.findMany({
       where: { userId: decoded.userId },
       orderBy: { createdAt: 'desc' },
@@ -25,7 +26,7 @@ router.post('/', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { poste, zone, motivation } = req.body;
     if (!poste || !motivation) return res.status(400).json({ message: 'Poste et motivation requis' });
     const existing = await prisma.candidature.findFirst({

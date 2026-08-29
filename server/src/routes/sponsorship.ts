@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -25,7 +26,7 @@ router.post('/init', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { cniNumber, region } = req.body;
     if (!cniNumber || !region) return res.status(400).json({ message: 'CNI et région requis' });
     if (!isValidCNI(cniNumber)) return res.status(400).json({ message: 'Format CNI invalide (ex: A12345678)' });
@@ -61,7 +62,7 @@ router.post('/verify', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { sponsorshipId, code } = req.body;
     const sponsorship = await prisma.sponsorship.findFirst({
       where: { id: sponsorshipId, userId: decoded.userId }

@@ -65,6 +65,7 @@ import customFieldsRoutes from "./routes/custom-fields";
 import siteVisibilityRoutes from "./routes/site-visibility";
 import integrationsRoutes from "./routes/integrations";
 import customFieldValuesRoutes from "./routes/custom-field-values";
+import rubriquesRoutes from './routes/rubriques';
 
 const app = express();
 
@@ -91,6 +92,7 @@ app.use(cookieParser());
 
 // Enregistrement des routes (conservé à l'identique)
 app.use("/api/auth", authRoutes);
+app.use('/api/rubriques', rubriquesRoutes);
 app.use('/api/translations', translationsRoutes);
 app.use("/api/posts", postsRoutes);
 app.use('/api/translations', translationsRoutes);

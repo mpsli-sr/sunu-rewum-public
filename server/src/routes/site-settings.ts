@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { requireRole } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
@@ -50,7 +51,7 @@ router.get('/', async (_req, res) => {
 });
 
 // PUT : mise à jour par l'admin
-router.put('/', async (req: Request, res: Response) => {
+router.put('/', requireRole('ADMIN'), async (req, res) => {
   const {
     primaryColor, secondaryColor, accentColor, siteTitle, faviconUrl,
     customCSS, customJS, backgroundImage,

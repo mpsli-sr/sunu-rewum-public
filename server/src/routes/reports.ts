@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireRole } from '../middleware/auth';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -13,7 +14,7 @@ router.post('/', async (req: Request, res: Response) => {
   if (token) {
     try {
       const jwt = require('jsonwebtoken');
-      const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+      const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
       userId = decoded.userId;
     } catch {}
   }

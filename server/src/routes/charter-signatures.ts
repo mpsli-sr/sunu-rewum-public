@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { sendMail } from '../services/mailer';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -22,7 +23,7 @@ router.post('/verify', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
     if (user && user.email) {
       await sendMail(user.email, 'Signature de la charte confirmée',

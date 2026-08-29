@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -10,7 +11,7 @@ router.get('/me', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       include: { settings: true },
@@ -27,7 +28,7 @@ router.put('/me', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { bio, profileImage, region } = req.body;
     const user = await prisma.user.update({
       where: { id: decoded.userId },
@@ -43,7 +44,7 @@ router.put('/me/password', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'Non authentifié' });
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+    const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
     const { currentPassword, newPassword } = req.body;
     const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
     if (!user) return res.status(404).json({ message: 'Utilisateur introuvable' });

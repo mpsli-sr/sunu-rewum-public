@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { JWT_ACCESS_SECRET } from '../config';
 const router = Router();
 const prisma = new PrismaClient();
 
@@ -13,7 +14,7 @@ router.get('/my', async (req: Request, res: Response) => {
   const token = req.cookies?.token;
   if (!token) return res.status(401).json({ error: 'Non connecté' });
   const jwt = require('jsonwebtoken');
-  const decoded: any = jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'dev_secret');
+  const decoded: any = jwt.verify(token, JWT_ACCESS_SECRET);
   const userBadges = await prisma.userBadge.findMany({
     where: { userId: decoded.userId },
     include: { badge: true },

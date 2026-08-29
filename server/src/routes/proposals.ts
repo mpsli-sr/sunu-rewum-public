@@ -22,12 +22,26 @@ router.post('/', requireRole('MEMBER', 'COORDINATOR', 'ADMIN'), async (req: Requ
   res.json(proposal);
 });
 
-router.post('/vote', async (req: Request, res: Response) => {
-  const { proposalId, userId } = req.body;
-  const existing = await prisma.vote.findUnique({ where: { userId_proposalId: { userId, proposalId } } });
-  if (existing) await prisma.vote.delete({ where: { id: existing.id } });
-  else await prisma.vote.create({ data: { userId, proposalId } });
-  const proposal = await prisma.citizenProposal.findUnique({ where: { id: proposalId }, include: { votes: true } });
+router.post('/vote', requireRole('MEMBER', 'COORDINATOR', 'ADMIN'), async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const { proposalId } = req.body;
+
+  if (!proposalId) return res.status(400).json({ message: 'proposalId requis' });
+
+  const existing = await prisma.vote.findUnique({
+    where: { userId_proposalId: { userId: user.id, proposalId } },
+  });
+
+  if (existing) {
+    await prisma.vote.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.vote.create({ data: { userId: user.id, proposalId } });
+  }
+
+  const proposal = await prisma.citizenProposal.findUnique({
+    where: { id: proposalId },
+    include: { votes: true },
+  });
   res.json(proposal);
 });
 

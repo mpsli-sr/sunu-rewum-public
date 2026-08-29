@@ -672,3 +672,22 @@ enum Status {
   REJECTED
   ARCHIVED
 }
+model Rubrique {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  titre       String
+  description String?
+  icon        String?
+  couleur     String?
+  ordre       Int        @default(0)
+  actif       Boolean    @default(true)
+  parentId    String?
+  parent      Rubrique?  @relation("RubriqueTree", fields: [parentId], references: [id])
+  enfants     Rubrique[] @relation("RubriqueTree")
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+  @@index([ordre])
+}

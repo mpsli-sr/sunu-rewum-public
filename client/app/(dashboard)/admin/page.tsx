@@ -9,6 +9,7 @@ import DashboardConfigAdmin from "@/components/admin/DashboardConfigAdmin";
 import RoleManager from "@/components/admin/RoleManager";
 import FileUploader from "@/components/FileUploader";
 import { http } from "@/lib/api";
+import RubriquesManager from "@/components/admin/RubriquesManager";
 
 const resources = [
   { key: "users", label: "👥 Utilisateurs" },
@@ -31,6 +32,7 @@ const resources = [
   { key: "visibility", label: "👁️ Visibilité" },
   { key: "candidatures", label: "🗳️ Candidatures" },
   { key: "backup", label: "💾 Sauvegarde" },
+  { key: "rubriques", label: "📂 Rubriques" },
 ];
 
 export default function AdminPage() {
@@ -534,7 +536,9 @@ export default function AdminPage() {
                         );
                         if (newPwd) {
                           http
-                            .put(`/api/admin-users/${u.id}`, { password: newPwd })
+                            .put(`/api/admin-users/${u.id}`, {
+                              password: newPwd,
+                            })
                             .then(() => alert("Mot de passe mis à jour"))
                             .catch((err) =>
                               console.error("Erreur mot de passe:", err),
@@ -675,7 +679,8 @@ export default function AdminPage() {
                 className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow flex justify-between"
               >
                 <span>
-                  {v.user?.firstName ?? ""} {v.user?.lastName ?? ""} → {v.target}
+                  {v.user?.firstName ?? ""} {v.user?.lastName ?? ""} →{" "}
+                  {v.target}
                 </span>
                 <button
                   onClick={() => deleteVote(v.id, v.type)}
@@ -1107,6 +1112,7 @@ export default function AdminPage() {
       {active === "visibility" && <VisibilityManager />}
       {active === "integrations" && <IntegrationsManager />}
       {active === "candidatures" && <CandidaturesManager />}
+      {active === "rubriques" && <RubriquesManager />}
       <EditableBlockRenderer page="admin" />
     </div>
   );
