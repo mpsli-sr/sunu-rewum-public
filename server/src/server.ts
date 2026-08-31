@@ -1,21 +1,27 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server } from 'socket.io';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import { initSocket } from './socket';
 
-// --- Imports automatiques de toutes les routes ---
+// ---- Routes API ----
 import authRoutes from './routes/auth';
-import rubriquesRoutes from './routes/rubriques';
 import userRoutes from './routes/user';
+import rubriquesRoutes from './routes/rubriques';
 import translationsRoutes from './routes/translations';
 import siteSettingsRoutes from './routes/site-settings';
+import settingsRoutes from './routes/settings';
 import postsRoutes from './routes/posts';
 import eventsRoutes from './routes/events';
 import programRoutes from './routes/program';
 import diasporaRoutes from './routes/diaspora';
+import diasporaCandidatesRoutes from './routes/diaspora-candidates';
 import recruitmentRoutes from './routes/recruitment';
 import badgesRoutes from './routes/badges';
 import adminRoutes from './routes/admin';
+import adminUsersRoutes from './routes/admin-users';
+import adminActionsRoutes from './routes/admin-actions';
 import messagesRoutes from './routes/messages';
 import proposalsRoutes from './routes/proposals';
 import propositionsRoutes from './routes/propositions';
@@ -42,7 +48,7 @@ import menusRoutes from './routes/menus';
 import leaderboardRoutes from './routes/leaderboard';
 import simulatorRoutes from './routes/simulator';
 import contentBlocksRoutes from './routes/content-blocks';
-import charterSignaturesRoutes from './routes/charter-signatures';
+import charterRoutes from './routes/charter-signatures';
 import sponsorshipRoutes from './routes/sponsorship';
 import sponsorshipsRoutes from './routes/sponsorships';
 import newsletterRoutes from './routes/newsletter';
@@ -50,26 +56,20 @@ import reportsRoutes from './routes/reports';
 import regionalStatsRoutes from './routes/regional-stats';
 import siteVisibilityRoutes from './routes/site-visibility';
 import verifyRoutes from './routes/verify';
-// Ajoutez ici les autres routes si elles existent (admin-actions, etc.)
-// Pour les noms avec tirets, utilisez le nom du fichier sans le tiret
-// Exemple: admin-actions → adminActionsRoutes (mais on peut les ajouter manuellement)
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
-
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://sunu-rewum.vercel.app,http://localhost:3000')
-  .split(',')
-  .map(s => s.trim());
+// ---- CORS dynamique ----
+const allowedOrigins = (process.env.CORS_ORIGINS || [
+  'https://sunu-rewum.vercel.app',
+  'https://sunu-rewum-git-main-mpsli-srs-projects.vercel.app',
+  'http://localhost:3000',
+].join(',')).split(',').map((s: string) => s.trim());
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -77,64 +77,69 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
-// Montage des routes
-app.use('/api/auth', authRoutes);
-app.use('/api/rubriques', rubriquesRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/translations', translationsRoutes);
-app.use('/api/site-settings', siteSettingsRoutes);
-app.use('/api/posts', postsRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/program', programRoutes);
-app.use('/api/diaspora', diasporaRoutes);
-app.use('/api/recruitment', recruitmentRoutes);
-app.use('/api/badges', badgesRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/messages', messagesRoutes);
-app.use('/api/proposals', proposalsRoutes);
-app.use('/api/propositions', propositionsRoutes);
-app.use('/api/donations', donationsRoutes);
-app.use('/api/articles', articlesRoutes);
-app.use('/api/media', mediaRoutes);
-app.use('/api/jobs', jobsRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/candidatures', candidaturesRoutes);
-app.use('/api/ministries', ministriesRoutes);
-app.use('/api/organization', organizationRoutes);
-app.use('/api/transparency', transparencyRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/roles', rolesRoutes);
-app.use('/api/custom-fields', customFieldsRoutes);
-app.use('/api/pages', pagesRoutes);
-app.use('/api/integrations', integrationsRoutes);
-app.use('/api/public-integrations', publicIntegrationsRoutes);
-app.use('/api/dashboard-config', dashboardConfigRoutes);
-app.use('/api/social-links', socialLinksRoutes);
-app.use('/api/payment-methods', paymentMethodsRoutes);
-app.use('/api/menu-items', menuItemsRoutes);
-app.use('/api/menus', menusRoutes);
-app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api/simulator', simulatorRoutes);
-app.use('/api/content-blocks', contentBlocksRoutes);
-app.use('/api/charter-signatures', charterSignaturesRoutes);
-app.use('/api/sponsorship', sponsorshipRoutes);
-app.use('/api/sponsorships', sponsorshipsRoutes);
-app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/regional-stats', regionalStatsRoutes);
-app.use('/api/site-visibility', siteVisibilityRoutes);
-app.use('/api/verify', verifyRoutes);
+// ---- Fichiers statiques ----
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Route racine
-app.get('/', (req, res) => res.send('API SUNU REWUM'));
+// ---- Montage UNIQUE de toutes les routes sous /api/* ----
+const api = express.Router();
+api.use('/auth', authRoutes);                       // POST /api/auth/login, GET /api/auth/me
+api.use('/user', userRoutes);
+api.use('/rubriques', rubriquesRoutes);
+api.use('/translations', translationsRoutes);       // GET /api/translations/fr
+api.use('/site-settings', siteSettingsRoutes);      // GET /api/site-settings
+api.use('/settings', settingsRoutes);
+api.use('/posts', postsRoutes);
+api.use('/events', eventsRoutes);
+api.use('/program', programRoutes);
+api.use('/diaspora', diasporaRoutes);
+api.use('/diaspora-candidates', diasporaCandidatesRoutes);
+api.use('/recruitment', recruitmentRoutes);
+api.use('/badges', badgesRoutes);
+api.use('/admin', adminRoutes);
+api.use('/admin-users', adminUsersRoutes);
+api.use('/admin-actions', adminActionsRoutes);
+api.use('/messages', messagesRoutes);
+api.use('/proposals', proposalsRoutes);
+api.use('/propositions', propositionsRoutes);
+api.use('/donations', donationsRoutes);
+api.use('/articles', articlesRoutes);
+api.use('/media', mediaRoutes);
+api.use('/jobs', jobsRoutes);
+api.use('/upload', uploadRoutes);
+api.use('/candidatures', candidaturesRoutes);
+api.use('/ministries', ministriesRoutes);
+api.use('/organization', organizationRoutes);
+api.use('/transparency', transparencyRoutes);
+api.use('/search', searchRoutes);
+api.use('/roles', rolesRoutes);
+api.use('/custom-fields', customFieldsRoutes);
+api.use('/pages', pagesRoutes);
+api.use('/integrations', integrationsRoutes);
+api.use('/public-integrations', publicIntegrationsRoutes);
+api.use('/dashboard-config', dashboardConfigRoutes);
+api.use('/social-links', socialLinksRoutes);
+api.use('/payment-methods', paymentMethodsRoutes);
+api.use('/menu-items', menuItemsRoutes);
+api.use('/menus', menusRoutes);
+api.use('/leaderboard', leaderboardRoutes);
+api.use('/simulator', simulatorRoutes);
+api.use('/content-blocks', contentBlocksRoutes);
+api.use('/charter-signatures', charterRoutes);
+api.use('/sponsorship', sponsorshipRoutes);
+api.use('/sponsorships', sponsorshipsRoutes);
+api.use('/newsletter', newsletterRoutes);
+api.use('/reports', reportsRoutes);
+api.use('/regional-stats', regionalStatsRoutes);
+api.use('/site-visibility', siteVisibilityRoutes);
+api.use('/verify', verifyRoutes);
+api.get('/health', (_req, res) => res.json({ status: 'OK' }));
+app.use('/api', api);
 
-io.on('connection', (socket) => {
-  console.log('Client connecté');
-  socket.on('disconnect', () => console.log('Client déconnecté'));
-});
+app.get('/', (_req, res) => res.send('API SUNU REWUM en ligne'));
+initSocket(server);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Serveur sur http://localhost:${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Serveur + Socket.io sur http://localhost:${PORT}`));
