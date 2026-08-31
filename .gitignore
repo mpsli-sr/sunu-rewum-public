@@ -12,3 +12,8 @@ node_modules/
 server/dist/
 server/.env
 _backups/
+server/.env
+_backups/
+_archive_*
+*.log
+client/tsconfig.tsbuildinfo
