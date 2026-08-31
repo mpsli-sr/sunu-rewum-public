@@ -7,6 +7,7 @@ import { JWT_ACCESS_SECRET } from '../config';
 
 const router = Router();
 
+// Rate limiter pour login et register
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -15,9 +16,11 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Inscription
 router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, firstName, lastName } = req.body;
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Email et mot de passe requis.' });
     }
@@ -42,6 +45,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
       },
     });
 
+    // En production, envoyer un email de vérification
     const token = jwt.sign({ userId: user.id }, JWT_ACCESS_SECRET, { expiresIn: '1d' });
     console.log(`Lien de vérification : ${process.env.FRONT_URL || 'http://localhost:3000'}/verify?token=${token}`);
 
@@ -52,6 +56,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
   }
 });
 
+// Connexion
 router.post('/login', authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -71,6 +76,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
+    // Cookie sécurisé
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
@@ -95,6 +101,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
   }
 });
 
+// Récupérer le profil (GET /me)
 router.get('/me', async (req: Request, res: Response) => {
   try {
     const token = req.cookies?.token;
@@ -118,6 +125,7 @@ router.get('/me', async (req: Request, res: Response) => {
   }
 });
 
+// Vérification du compte (GET /verify)
 router.get('/verify', async (req: Request, res: Response) => {
   try {
     const token = req.query.token as string;
@@ -138,6 +146,7 @@ router.get('/verify', async (req: Request, res: Response) => {
   }
 });
 
+// Déconnexion
 router.post('/logout', (req: Request, res: Response) => {
   res.clearCookie('token');
   res.json({ message: 'Déconnecté.' });

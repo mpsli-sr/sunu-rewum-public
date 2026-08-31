@@ -17,7 +17,6 @@ router.get('/me', async (req: Request, res: Response) => {
       include: { settings: true },
     });
     if (!user) return res.status(404).json({ message: 'Utilisateur introuvable' });
-    // Ne pas renvoyer le hash du mot de passe
     const { passwordHash, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   } catch { res.status(401).json({ message: 'Token invalide' }); }

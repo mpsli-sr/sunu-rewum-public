@@ -1,9 +1,14 @@
-/** @type {import("next").NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
-  reactStrictMode: true,
+  output: 'standalone',
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.cloudinary.com', // ou vos domaines autorisés
+      },
+      // Ajoutez vos domaines spécifiques
+    ],
   },
 };
 

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies (client)
+        run: cd client && npm ci
+      - name: Typecheck (client)
+        run: cd client && npx tsc --noEmit
+      - name: Build (client)
+        run: cd client && npm run build
+      - name: Install dependencies (server)
+        run: cd server && npm ci
+      - name: Typecheck (server)
+        run: cd server && npx tsc --noEmit
+      - name: Prisma generate
+        run: cd server && npx prisma generate
