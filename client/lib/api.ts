@@ -1,5 +1,4 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "https://sunu-rewum.onrender.com";
+const API_URL = ''; // vide → utilise le proxy /api/*
 
 export class ApiError extends Error {
   status: number;
@@ -16,13 +15,15 @@ async function request<T = unknown>(
 ): Promise<T> {
   const { auth = true, headers, ...init } = options;
 
+  const finalHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(headers as Record<string, string> || {}),
+  };
+
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    credentials: auth ? "include" : "omit",
+    headers: finalHeaders,
+    credentials: "include",
   });
 
   if (!res.ok) {
@@ -40,36 +41,12 @@ async function request<T = unknown>(
 export const http = {
   get: <T>(path: string, opts?: RequestInit & { auth?: boolean }) =>
     request<T>(path, { ...opts, method: "GET" }),
-  post: <T>(
-    path: string,
-    body?: unknown,
-    opts?: RequestInit & { auth?: boolean },
-  ) =>
-    request<T>(path, {
-      ...opts,
-      method: "POST",
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }),
-  put: <T>(
-    path: string,
-    body?: unknown,
-    opts?: RequestInit & { auth?: boolean },
-  ) =>
-    request<T>(path, {
-      ...opts,
-      method: "PUT",
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }),
-  patch: <T>(
-    path: string,
-    body?: unknown,
-    opts?: RequestInit & { auth?: boolean },
-  ) =>
-    request<T>(path, {
-      ...opts,
-      method: "PATCH",
-      body: body === undefined ? undefined : JSON.stringify(body),
-    }),
+  post: <T>(path: string, body?: unknown, opts?: RequestInit & { auth?: boolean }) =>
+    request<T>(path, { ...opts, method: "POST", body: body ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown, opts?: RequestInit & { auth?: boolean }) =>
+    request<T>(path, { ...opts, method: "PUT", body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(path: string, body?: unknown, opts?: RequestInit & { auth?: boolean }) =>
+    request<T>(path, { ...opts, method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string, opts?: RequestInit & { auth?: boolean }) =>
     request<T>(path, { ...opts, method: "DELETE" }),
 };
